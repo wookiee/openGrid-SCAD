@@ -25,4 +25,5 @@ My current work-in-progress project, not even alpha. Do not use. Under active de
 
 ## License
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
 Because these files remix and use designs from the openGrid platform, they adopt openGrid's selected [CC BY 4.0 License](https://creativecommons.org/licenses/by/4.0/).
