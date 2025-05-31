@@ -1,11 +1,15 @@
 /* [Bin Parameters] */
 
-// Dimensions are in millimeters. Multiple shelves can fit side-by-side on the grid if your Shelf Width is an odd multiple of 28mm, such as 112mm or 196mm.
-bin_width = 30;
-bin_height = 10;
-bin_depth = 20;
+bin_width = 150;
+bin_height = 50;
+bin_depth = 30;
+
 wall_thickness = 3;
 floor_thickness = 3;
+
+width_sub_bins = 3;
+depth_sub_bins = 2;
+sub_bin_wall_thickness = 2;
 
 /* [Hidden] */
 
@@ -28,17 +32,6 @@ snap_height = 6.8;
 /*///////////////////////////
     BIN
 *////////////////////////////
-
-module filleted_bin() {
-    minkowski() {
-        difference() {
-            cube([bin_width, bin_depth, bin_height], center = true);
-            translate([0,0,0.001])
-                cube([bin_width - 0.001, bin_depth - 0.001, bin_height], center = true);
-        };
-        sphere(wall_thickness/2);
-    };
-};
 
 module bin() {
 	polyhedron(
@@ -204,6 +197,44 @@ module bin() {
 			[11, 47, 35, 23]
 		]
 	);
+};
+
+module bin_divider(length) {
+    inset = wall_thickness/2;
+    adjusted_length = length - wall_thickness;
+    sub_bin_lip_chamfer = sub_bin_wall_thickness/2;
+    height = bin_height - (lip_chamfer - sub_bin_wall_thickness/2);
+    
+    polyhedron(
+        points = [
+            [inset, sub_bin_wall_thickness/2, height], // lip W
+            [inset, 0, height - sub_bin_lip_chamfer], // front NW
+            [inset, 0, wall_chamfer_inner], // front WSW
+            [inset + wall_chamfer_inner, 0, 0], // front SSW
+            [length - wall_chamfer_inner, 0, 0], // front SSE
+            [length, 0, wall_chamfer_inner], // front ESE
+            [length, 0, height - sub_bin_lip_chamfer], // front NE
+            [length, sub_bin_wall_thickness/2, height], // lip E
+            [length, sub_bin_wall_thickness, height - sub_bin_lip_chamfer], // rear NE
+            [length, sub_bin_wall_thickness, wall_chamfer_inner], // rear ESE
+            [length - wall_chamfer_inner, sub_bin_wall_thickness, 0], // rear SSE
+            [inset + wall_chamfer_inner, sub_bin_wall_thickness, 0], // rear SSW
+            [inset, sub_bin_wall_thickness, wall_chamfer_inner], // rear WSW
+            [inset, sub_bin_wall_thickness, height - sub_bin_lip_chamfer], // rear NW
+        ],
+        
+        faces = [
+            [0, 1, 6, 7], // front lip
+            [1, 2, 3, 4, 5, 6], // front face
+            [7, 8, 13, 0], // rear lip
+            [8, 9, 10, 11, 12, 13], // rear face
+            [0, 1, 2, 12, 13], // W edge
+            [5, 6, 7, 8, 9], // E edge
+            [2, 3, 11, 12], // W bottom chamfer
+            [4, 5, 9, 10], // E bottom chamfer
+            [3, 4, 10, 11], // bottom edge
+        ]
+    );
 };
 
 /*///////////////////////////
@@ -468,12 +499,6 @@ module opengrid_directional_snap() {
     FINAL ASSEMBLY
 *////////////////////////////
 
-module prepared_snap() {
-    translate([0, snap_height, 0])
-        rotate([90, 0 , 0])
-            opengrid_directional_snap();
-};
-
 snap_width = full_side_length;
 snap_margin = (cell_width - snap_width) / 2; // 1.5mm
 total_width = bin_width;
@@ -489,16 +514,39 @@ gap_width = cell_width;
 snap_remainder = bin_width - (cell_count * cell_width);
 outer_snap_offset = even_cell_count ? (snap_remainder + cell_width)/2 : snap_remainder / 2;
 
-//union() {
-//    translate([-outer_snap_offset - snap_margin, 0, 0])
-//        translate([bin_width/2, -bin_depth/2 - wall_thickness/2, -bin_height/2 + full_side_length])
-//            bin();
-//
-//    for (i = [0 : snap_count - 1]) {
-//        translate([i * (cell_width * 2), 0, 0])
-//            prepared_snap();
-//    }
-//};
+module positioned_snaps() {
+    for (i = [0 : snap_count - 1]) {
+        translate([i * (cell_width * 2) + wall_chamfer_outer, snap_height, bin_height - cell_width])
+            rotate([90, 0 , 0])
+                opengrid_directional_snap();
+    }
+};
 
-bin();
+module positioned_bin() {
+    translate([0, -bin_depth, -bin_height/2 + full_side_length])
+        bin();
+};
 
+module positioned_dividers() {
+    inner_width = bin_width - wall_thickness*(width_sub_bins-1);
+    width_gap = inner_width / width_sub_bins;
+    inner_depth = bin_depth - wall_thickness*2;
+    depth_gap = inner_depth / depth_sub_bins;
+
+    for (i = [1 : width_sub_bins - 1]) {
+        translate([wall_thickness + width_gap*i - sub_bin_wall_thickness/2*i, 0, 0])
+            rotate([0, 0, -90])
+                bin_divider(length = bin_depth - wall_thickness/2);
+    }
+    
+    for (i = [1 : depth_sub_bins - 1]) {
+        translate([0, -wall_thickness - depth_gap*i - sub_bin_wall_thickness/2*i, 0])
+            bin_divider(length = bin_width - wall_thickness/2);
+    }
+};
+
+union() {
+    positioned_bin();
+    positioned_snaps();
+    positioned_dividers();
+};
