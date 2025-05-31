@@ -1,22 +1,19 @@
-/* [Shelf Parameters] */
+/* [Bin Parameters] */
 
 // Dimensions are in millimeters. Multiple shelves can fit side-by-side on the grid if your Shelf Width is an odd multiple of 28mm, such as 112mm or 196mm.
-shelf_width = 84;
-shelf_depth = 170;
+bin_width = 30;
+bin_height = 10;
+bin_depth = 20;
+wall_thickness = 3;
+floor_thickness = 3;
 
 /* [Hidden] */
 
-// Hidden shelf parameters
-shelf_thickness = 5;
-shelf_lip_height = 5;
-min_snaps = 1;
-max_snaps = floor(shelf_width/28);
-outer_face_outset = 3;
-outer_face_bottom = 3;
-outer_face_top = 5;
-lip_top_height = 8;
-lip_top_thickness = 2;
-tray_edge_inset = outer_face_outset + lip_top_thickness;
+wall_chamfer_outer = wall_thickness * 1.5;
+wall_chamfer_inner = wall_thickness;
+lip_chamfer = wall_thickness/2;
+
+$fn = 64;
 
 // Hidden snap parameters
 side_length = 18.2745;
@@ -29,74 +26,184 @@ short_tab_length = 10.8;
 snap_height = 6.8;
 
 /*///////////////////////////
-    SHELF
+    BIN
 *////////////////////////////
 
-module shelf_blank() {
-    // The points are grouped by corner, starting with the southwest (bottom-left) corner
-    // For each corner, point 0 is on bottom of the shelf, and are ordered along the corner's edge to the outside, then up to the lip, and ending with the matching corner of the tray's inner face
-    polyhedron(
-        points = [
-            // SW corner
-            [outer_face_outset, outer_face_outset, 0], // SW corner of bottom face
-            [0, 0, outer_face_bottom], // SW corner bottom of W face
-            [0, 0, outer_face_top], // SW corner top of W face
-            [outer_face_outset, outer_face_outset, lip_top_height], // SW outer corner of top of lip
-            [lip_top_thickness, lip_top_thickness, lip_top_height], // SW inner corner of top lip
-            [tray_edge_inset, tray_edge_inset, shelf_thickness], // SW corner of shelf top surface
+module filleted_bin() {
+    minkowski() {
+        difference() {
+            cube([bin_width, bin_depth, bin_height], center = true);
+            translate([0,0,0.001])
+                cube([bin_width - 0.001, bin_depth - 0.001, bin_height], center = true);
+        };
+        sphere(wall_thickness/2);
+    };
+};
+
+module bin() {
+	polyhedron(
+		points = [
+		
+			/* SW Corner */ 
+		
+			// SW bottom outer corner
+				/* 00 */ [wall_chamfer_outer, wall_chamfer_outer, 0], // bottom
+				/* 01 */ [wall_chamfer_outer, 0, wall_chamfer_outer], // S
+				/* 02 */ [0, wall_chamfer_outer, wall_chamfer_outer], // W
+			
+			// SW top/lip corner, S seam
+				/* 03 */ [wall_chamfer_outer, 0, bin_height - lip_chamfer], // outer
+				/* 04 */ [wall_chamfer_outer + wall_thickness/4, wall_thickness/2, bin_height], // top
+				/* 05 */ [wall_chamfer_outer + wall_thickness/2, wall_thickness, bin_height - lip_chamfer], // inner
+			
+			// SW top/lip corner, W seam
+				/* 06 */ [0, wall_chamfer_outer, bin_height - lip_chamfer], // outer
+				/* 07 */ [wall_thickness/2, wall_chamfer_outer + wall_thickness/4, bin_height], // top
+				/* 08 */ [wall_thickness, wall_chamfer_outer + wall_thickness/2, bin_height - lip_chamfer], // inner
+			
+			// SW bottom inner corner
+				/* 09 */ [wall_chamfer_outer + wall_thickness/2, wall_thickness, floor_thickness + wall_chamfer_inner], // S
+				/* 10 */ [wall_thickness, wall_chamfer_outer + wall_thickness/2, floor_thickness + wall_chamfer_inner], // W
+				/* 11 */ [wall_thickness + wall_chamfer_inner, wall_thickness + wall_chamfer_inner, floor_thickness], // bottom
+			
+			/* NW Corner */
+			
+			// NW bottom outer corner
+				/* 12 */ [wall_chamfer_outer, bin_depth - wall_chamfer_outer, 0], // bottom
+				/* 13 */ [0, bin_depth - wall_chamfer_outer, wall_chamfer_outer], // W
+				/* 14 */ [wall_chamfer_outer, bin_depth, wall_chamfer_outer], // N
+			
+			// NW top/lip corner, W seam
+				/* 15 */ [0, bin_depth - wall_chamfer_outer, bin_height - lip_chamfer], // outer
+				/* 16 */ [wall_thickness/2, bin_depth - (wall_chamfer_outer + wall_thickness/4), bin_height], // top
+				/* 17 */ [wall_thickness, bin_depth - (wall_chamfer_outer + wall_thickness/2), bin_height - lip_chamfer], // inner
+			
+			// NW top/lip corner, N seam
+				/* 18 */ [wall_chamfer_outer, bin_depth, bin_height - lip_chamfer], // outer
+				/* 19 */ [wall_chamfer_outer + wall_thickness/4, bin_depth - wall_thickness/2, bin_height], // top
+				/* 20 */ [wall_chamfer_outer + wall_thickness/2, bin_depth - wall_thickness, bin_height - lip_chamfer], // inner
+			
+			// NW bottom inner corner
+				/* 21 */ [wall_thickness, bin_depth - (wall_chamfer_outer + wall_thickness/2), floor_thickness + wall_chamfer_inner], // W
+				/* 22 */ [wall_thickness + wall_chamfer_inner, bin_depth - wall_thickness, floor_thickness + wall_chamfer_inner], // N
+				/* 23 */ [wall_thickness + wall_chamfer_inner, bin_depth - (wall_thickness + wall_chamfer_inner), floor_thickness], // bottom
+			
+			/* NE Corner */
+			
+			// NE bottom outer corner
+				/* 24 */ [bin_width - wall_chamfer_outer, bin_depth - wall_chamfer_outer, 0], // bottom
+				/* 25 */ [bin_width, bin_depth - wall_chamfer_outer, wall_chamfer_outer], // E
+				/* 26 */ [bin_width - wall_chamfer_outer, bin_depth, wall_chamfer_outer], // N
+			
+			// NE top/lip corner, E seam 
+				/* 27 */ [bin_width, bin_depth - wall_chamfer_outer, bin_height - lip_chamfer], // outer
+				/* 28 */ [bin_width - wall_thickness/2, bin_depth - (wall_chamfer_outer + wall_thickness/4), bin_height], // top
+				/* 29 */ [bin_width - wall_thickness, bin_depth - (wall_chamfer_outer + wall_thickness/2), bin_height - lip_chamfer], // inner
+			
+			// NE top/lip corner, N seam
+				/* 30 */ [bin_width - wall_chamfer_outer, bin_depth, bin_height - lip_chamfer], // outer
+				/* 31 */ [bin_width - (wall_chamfer_outer + wall_thickness/4), bin_depth - wall_thickness/2, bin_height], // top
+				/* 32 */ [bin_width - (wall_chamfer_outer + wall_thickness/2), bin_depth - wall_thickness, bin_height - lip_chamfer], // inner
+			
+			// NE bottom inner corner
+				/* 33 */ [bin_width - wall_thickness, bin_depth - (wall_chamfer_outer + wall_thickness/2), floor_thickness + wall_chamfer_inner], // E
+				/* 34 */ [bin_width - (wall_chamfer_outer + wall_thickness/2), bin_depth - wall_thickness, floor_thickness + wall_chamfer_inner], // N
+				/* 35 */ [bin_width - (wall_thickness + wall_chamfer_inner), bin_depth - (wall_thickness + wall_chamfer_inner), floor_thickness], // bottom
+			
+			/* SE Corner */
+			
+			// SE bottom outer corner
+				/* 36 */ [bin_width - wall_chamfer_outer, wall_chamfer_outer, 0], // bottom
+				/* 37 */ [bin_width - wall_chamfer_outer, 0, wall_chamfer_outer], // S
+				/* 38 */ [bin_width, wall_chamfer_outer, wall_chamfer_outer], // E
+			
+			// SE top/lip corner, S seam
+				/* 39 */ [bin_width - wall_chamfer_outer, 0, bin_height - lip_chamfer], // outer
+				/* 40 */ [bin_width - (wall_chamfer_outer + wall_thickness/4), wall_thickness/2, bin_height], // top
+				/* 41 */ [bin_width - (wall_chamfer_outer + wall_thickness/2), wall_thickness, bin_height - lip_chamfer], // inner
+			
+			// SE top/lip corner, E seam
+				/* 42 */ [bin_width, wall_chamfer_outer, bin_height - lip_chamfer], // outer
+				/* 43 */ [bin_width - wall_thickness/2, wall_chamfer_outer + wall_thickness/4, bin_height], // top
+				/* 44 */ [bin_width - wall_thickness, wall_chamfer_outer + wall_thickness/2, bin_height - lip_chamfer], // inner
+			
+			// SE bottom inner corner
+				/* 45 */ [bin_width - (wall_chamfer_outer + wall_thickness/2), wall_thickness, floor_thickness + wall_chamfer_inner], // S
+				/* 46 */ [bin_width - wall_thickness, wall_chamfer_outer + wall_thickness/2, floor_thickness + wall_chamfer_inner], // E
+				/* 47 */ [bin_width - (wall_thickness + wall_chamfer_inner), wall_thickness + wall_chamfer_inner, floor_thickness], // bottom
+		],
+		faces = [
+			// SW Corner
+			[0, 1, 2],	        // outer bottom face
+			[1, 2, 6, 3],       // outer face
+			[3, 4, 7, 6],       // outer lip
+			[4, 5, 8, 7],       // inner lip
+			[5, 8, 10, 9],      // inner face
+			[9, 10, 11],        // inner bottom face
+			
+			// W Wall
+            [0, 2, 13, 12],     // outer bottom face
+            [2, 6, 15, 13],     // outer face
+            [6, 7, 16, 15],     // outer lip
+            [7, 8, 17, 16],     // inner lip
+            [8, 10, 21, 17],    // inner face
+            [10, 11, 23, 21],   // inner bottom face 
+			
+			// NW Corner
+			[12, 13, 14],       // outer bottom face
+			[13, 14, 18, 15],   // outer face
+			[15, 16, 19, 18],   // outer lip
+			[16, 17, 20, 19],   // inner lip
+			[17, 21, 22, 20],   // inner face
+			[23, 22, 21],       // inner bottom face
+			
+			// N Face
+            [14, 12, 24, 26],   // outer bottom face
+			[18, 14, 26, 30],   // outer face
+			[18, 19, 31, 30],   // outer lip
+			[19, 20, 32, 31],   // inner lip
+			[20, 22, 34, 32],   // inner face
+			[22, 23, 35, 34],   // inner bottom face
+			
+			// NE Corner
+            [24, 25, 26],       // outer bottom face
+			[26, 25, 27, 30],   // outer face
+			[30, 31, 28, 27],   // outer lip
+			[31, 32, 29, 28],   // inner lip
+			[32, 34, 33, 29],   // inner face
+			[33, 34, 35],       // inner bottom face
+			
+			// E Face
+            [25, 24, 36, 38],   // outer bottom face
+			[27, 25, 38, 42],   // outer face
+			[27, 28, 43, 42],   // outer lip
+			[28, 29, 44, 43],   // inner lip
+			[29, 33, 46, 44],   // inner face
+			[33, 35, 47, 46],   // inner bottom face
+			
+			// SE Corner
+            [36, 37, 38],       // outer bottom face
+			[37, 39, 42, 38],   // outer face
+			[42, 43, 40, 39],   // outer lip
+			[43, 44, 41, 40],   // inner lip
+			[46, 45, 41, 44],   // inner face
+			[45, 46, 47],       // inner bottom face
+			
+			// S Face
+            [0, 1, 37, 36],    // outer bottom face
+			[1, 3, 39, 37],     // outer face
+			[4, 3, 39, 40],     // outer lip
+			[5, 4, 40, 41],     // inner lip
+			[9, 5, 41, 45],     // inner face
+			[11, 9, 45, 47],    // inner bottom face
             
-            // NW corner
-            [outer_face_outset, shelf_depth, 0],
-            [0, shelf_depth-outer_face_outset, outer_face_bottom],
-            [0, shelf_depth-outer_face_outset, outer_face_top],
-            [outer_face_outset, shelf_depth, lip_top_height],
-            [lip_top_thickness, shelf_depth-lip_top_thickness, lip_top_height],
-            [tray_edge_inset, shelf_depth-tray_edge_inset, shelf_thickness],
+            // Bottom/outer face
+            [0, 36, 24, 12],
             
-            // NE corner
-            [shelf_width-outer_face_outset, shelf_depth, 0],
-            [shelf_width, shelf_depth-outer_face_outset, outer_face_bottom],
-            [shelf_width, shelf_depth-outer_face_outset, outer_face_top],
-            [shelf_width-outer_face_outset, shelf_depth, lip_top_height],
-            [shelf_width-lip_top_thickness, shelf_depth-lip_top_thickness, lip_top_height],
-            [shelf_width-tray_edge_inset, shelf_depth-tray_edge_inset, shelf_thickness],
-            
-            // SE corner
-            [shelf_width-outer_face_outset, outer_face_outset, 0],
-            [shelf_width, 0, outer_face_bottom],
-            [shelf_width, 0, outer_face_top],
-            [shelf_width-outer_face_outset, outer_face_outset, lip_top_height],
-            [shelf_width-lip_top_thickness, lip_top_thickness, lip_top_height],
-            [shelf_width-tray_edge_inset, tray_edge_inset, shelf_thickness]
-        ],
-        faces = [
-            [0, 6, 12, 18], // bottom face
-            
-            [0, 1, 7, 6], // W outer bottom chamfer
-            [1, 2, 8, 7], // W outer face
-            [2, 3, 9, 8], // W outer top chamfer
-            [3, 4, 10, 9], // W lip top face
-            [4, 5, 11, 10], // W inner chamfer
-            
-            [6, 7, 8, 9, 15, 14, 13, 12], // N face
-            [9, 10, 16, 15], // N lip top face
-            [11, 10, 16, 17], // N inner chamfer
-            
-            [12, 13, 19, 18], // E outer bottom chamfer
-            [13, 14, 20, 19], // E outer face
-            [14, 15, 21, 20], // E outer top chamfer
-            [15, 16, 22, 21], // E lip top face
-            [16, 17, 23, 22], // E inner chamfer
-            
-            [18, 19, 1, 0], // S outer bottom chamfer
-            [19, 20, 2, 1], // S outer face
-            [20, 21, 3, 2], // S outer top chamfer
-            [21, 22, 4, 3], // S lip top face
-            [22, 23, 5, 4], // S inner chamfer
-            
-            [5, 11, 17, 23] // top face
-        ]
-    );
+            // Top/inner face
+			[11, 47, 35, 23]
+		]
+	);
 };
 
 /*///////////////////////////
@@ -361,25 +468,17 @@ module opengrid_directional_snap() {
     FINAL ASSEMBLY
 *////////////////////////////
 
-module snap_chamfer() {
-    translate([full_side_length, full_side_length/6, snap_height])
-        rotate([90, -90, -90])
-            linear_extrude(height = full_side_length)
-                polygon(
-                    points = [
-                        [0, 0],
-                        [lip_top_thickness*2, 0],
-                        [0, lip_top_height + 8]
-                    ],
-                    paths = [[0, 1, 2]]
-                );
+module prepared_snap() {
+    translate([0, snap_height, 0])
+        rotate([90, 0 , 0])
+            opengrid_directional_snap();
 };
 
 snap_width = full_side_length;
 snap_margin = (cell_width - snap_width) / 2; // 1.5mm
-total_width = shelf_width;
+total_width = bin_width;
 
-cell_count = floor(shelf_width / cell_width);
+cell_count = floor(bin_width / cell_width);
 
 even_cell_count = (cell_count % 2 == 0) ? true : false;
 snap_count = (even_cell_count) ? floor(cell_count / 2) : floor(cell_count / 2) + 1;
@@ -387,26 +486,19 @@ even_snap_count = (snap_count % 2 == 0) ? true : false;
 gap_count = (even_cell_count) ? floor(cell_count / 2) - 1 : floor(cell_count/2);
 gap_width = cell_width;
 
-snap_remainder = shelf_width - (cell_count * cell_width);
+snap_remainder = bin_width - (cell_count * cell_width);
 outer_snap_offset = even_cell_count ? (snap_remainder + cell_width)/2 : snap_remainder / 2;
 
-//echo("total_width = ", total_width);
-//echo("shelf_width = ", shelf_width);
-//echo("outer_face_outset = ", outer_face_outset);
-//echo("outer_snap_offset = ", outer_snap_offset);
-//echo("cell_count = ", cell_count, " / ", shelf_width/cell_width);
-//echo("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder);
+//union() {
+//    translate([-outer_snap_offset - snap_margin, 0, 0])
+//        translate([bin_width/2, -bin_depth/2 - wall_thickness/2, -bin_height/2 + full_side_length])
+//            bin();
+//
+//    for (i = [0 : snap_count - 1]) {
+//        translate([i * (cell_width * 2), 0, 0])
+//            prepared_snap();
+//    }
+//};
 
-union() { 
-    translate([-outer_snap_offset - snap_margin, snap_width/6, shelf_depth+snap_height])
-        rotate([-90, 0, 0])
-            shelf_blank();
+bin();
 
-    for (i = [0 : snap_count - 1]) {
-        translate([i * (cell_width * 2), 0, 0])
-            union() {
-                snap_chamfer();
-                opengrid_directional_snap();
-            };
-    }
-};
