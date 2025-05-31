@@ -1,15 +1,15 @@
 /* [Bin Parameters] */
 
-bin_width = 150;
-bin_height = 50;
-bin_depth = 50;
+bin_width = 30;
+bin_depth = 30;
+bin_height = 100;
 
-wall_thickness = 3;
-floor_thickness = 3;
+wall_thickness = 2;
+floor_thickness = 2;
 
-width_sub_bins = 3;
-depth_sub_bins = 2;
-sub_bin_wall_thickness = 2;
+width_sub_bins = 1;
+depth_sub_bins = 1;
+sub_bin_wall_thickness = 5;
 
 /* [Hidden] */
 
