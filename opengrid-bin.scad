@@ -2,7 +2,7 @@
 
 bin_width = 150;
 bin_height = 50;
-bin_depth = 30;
+bin_depth = 50;
 
 wall_thickness = 3;
 floor_thickness = 3;
@@ -501,7 +501,7 @@ module opengrid_directional_snap() {
 
 snap_width = full_side_length;
 snap_margin = (cell_width - snap_width) / 2; // 1.5mm
-total_width = bin_width;
+total_width = bin_width - wall_chamfer_outer*2;
 
 cell_count = floor(bin_width / cell_width);
 
