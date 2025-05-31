@@ -390,13 +390,6 @@ gap_width = cell_width;
 snap_remainder = shelf_width - (cell_count * cell_width);
 outer_snap_offset = even_cell_count ? (snap_remainder + cell_width)/2 : snap_remainder / 2;
 
-//echo("total_width = ", total_width);
-//echo("shelf_width = ", shelf_width);
-//echo("outer_face_outset = ", outer_face_outset);
-//echo("outer_snap_offset = ", outer_snap_offset);
-//echo("cell_count = ", cell_count, " / ", shelf_width/cell_width);
-//echo("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder);
-
 union() { 
     translate([-outer_snap_offset - snap_margin, snap_width/6, shelf_depth+snap_height])
         rotate([-90, 0, 0])
