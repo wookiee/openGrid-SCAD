@@ -203,7 +203,7 @@ module bin_divider(length) {
     inset = wall_thickness/2;
     adjusted_length = length - wall_thickness;
     sub_bin_lip_chamfer = sub_bin_wall_thickness/2;
-    height = bin_height - (lip_chamfer - sub_bin_wall_thickness/2);
+    height = min(bin_height, bin_height - (lip_chamfer - sub_bin_wall_thickness/2));
     
     polyhedron(
         points = [
@@ -501,7 +501,7 @@ module opengrid_directional_snap() {
 
 snap_width = full_side_length;
 snap_margin = (cell_width - snap_width) / 2; // 1.5mm
-total_width = bin_width - wall_chamfer_outer*2;
+total_width = bin_width + wall_thickness - wall_chamfer_outer*2;
 
 cell_count = floor(bin_width / cell_width);
 
@@ -511,19 +511,25 @@ even_snap_count = (snap_count % 2 == 0) ? true : false;
 gap_count = (even_cell_count) ? floor(cell_count / 2) - 1 : floor(cell_count/2);
 gap_width = cell_width;
 
-snap_remainder = bin_width - (cell_count * cell_width);
+snap_remainder = total_width - (cell_count * cell_width);
 outer_snap_offset = even_cell_count ? (snap_remainder + cell_width)/2 : snap_remainder / 2;
+
+echo("total_width = ", total_width);
+echo("bin_width = ", bin_width);
+echo("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder);
+echo("outer_snap_offset = ", outer_snap_offset);
+echo("cell_count = ", cell_count, " / ", bin_width/cell_width);
 
 module positioned_snaps() {
     for (i = [0 : snap_count - 1]) {
-        translate([i * (cell_width * 2) + wall_chamfer_outer, snap_height, bin_height - cell_width])
+        translate([cell_width*2*i + wall_chamfer_outer + outer_snap_offset, snap_height, bin_height - cell_width])
             rotate([90, 0 , 0])
                 opengrid_directional_snap();
     }
 };
 
 module positioned_bin() {
-    translate([0, -bin_depth, -bin_height/2 + full_side_length])
+    translate([0, -bin_depth, 0])
         bin();
 };
 
