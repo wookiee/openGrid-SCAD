@@ -4,8 +4,12 @@ $fn = 64;
     PARAMETRIC PEG
 *//////////////////////////
         
-peg_body_length = 10;
-peg_body_diameter = 20;
+peg_body_length = 20;
+peg_body_diameter = 10;
+
+// If checked, there will be a cap at the end of the peg to prevent objects from slipping off.
+// Its thickness is 2mm and its diameter is 25% larger than the peg's diameter.
+peg_cap = true;
 
 /* [Hidden] */
 
@@ -35,17 +39,35 @@ module filleted_flange(inner_diameter, outer_diameter) {
 };
 
 module peg_cap(length, diameter) {
-    sphere_radius = length/2;
-    adjusted_length = length - sphere_radius;
-    adjusted_diameter = diameter - sphere_radius*2;
-    translate([0, 0, sphere_radius]) {
-        minkowski() {
-            // peg cap
-            cylinder(h = adjusted_length, d = adjusted_diameter);
-            // filleting sphere, sized to make the cap edge round
-            sphere(r = sphere_radius);
+    // Peg cap of 0 means no cap, just round off the end
+    if (length == 0) {
+        sphere_radius = diameter * 0.2;
+        adjusted_length = 0.001;
+        adjusted_diameter = diameter - sphere_radius*3;
+        
+        translate([0, 0, 0]) {
+            minkowski() {
+                // peg cap
+                cylinder(h = adjusted_length, d = adjusted_diameter);
+                // filleting sphere, sized to make the cap edge round
+                sphere(r = sphere_radius);
+            };
         };
-    };
+
+    } else {
+        sphere_radius = length/2;
+        adjusted_length = length - sphere_radius;
+        adjusted_diameter = diameter - sphere_radius*2;
+    
+        translate([0, 0, sphere_radius]) {
+            minkowski() {
+                // peg cap
+                cylinder(h = adjusted_length, d = adjusted_diameter);
+                // filleting sphere, sized to make the cap edge round
+                sphere(r = sphere_radius);
+            };
+        };
+    }
 };
 
 module peg(body_length, body_diameter, cap_length, cap_diameter) {   
@@ -60,11 +82,13 @@ module peg(body_length, body_diameter, cap_length, cap_diameter) {
         };
         
         // peg cap chamfer
-        chamfer_depth = (cap_diameter - body_diameter)/2;
-        translate([0, 0, body_length - chamfer_depth]) {
-            cylinder(h = chamfer_depth + cap_length/2 , 
-                     d1 = body_diameter, 
-                     d2 = body_diameter + chamfer_depth*2);
+        if (cap_length > 0) {
+            chamfer_depth = (cap_diameter - body_diameter)/2;
+            translate([0, 0, body_length - chamfer_depth]) {
+                cylinder(h = chamfer_depth + cap_length/2 , 
+                         d1 = body_diameter, 
+                         d2 = body_diameter + chamfer_depth*2);
+            };
         };
     };
 };
@@ -350,7 +374,7 @@ union() {
         // Completed peg with cap
         peg(body_length = peg_body_length, 
             body_diameter = peg_body_diameter,
-            cap_length = peg_cap_length,
+            cap_length = peg_cap ? peg_cap_length : 0,
             cap_diameter = peg_cap_diameter);
     };
 };
