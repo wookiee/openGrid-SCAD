@@ -1,20 +1,25 @@
-$fn = 64;
+$fn = 128;
 
 /*/////////////////////////
     PARAMETRIC PEG
 *//////////////////////////
         
-peg_body_length = 20;
-peg_body_diameter = 10;
+peg_body_length = 40;
+peg_body_diameter = 15;
 
-// If checked, there will be a cap at the end of the peg to prevent objects from slipping off.
-// Its thickness is 2mm and its diameter is 25% larger than the peg's diameter.
-peg_cap = true;
+// To remove the cap entirely, set its length to 0
+peg_cap_length = 2;
+peg_cap_diameter = 19;
+
+// openGrid snap type for connecting to base plates
+snap_type = "Full"; // [Full, Lite]
+
+// The fitment affects the tightness of the snap when mounted (ease of removing the peg)
+// Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
+// A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
+snap_fitment = 0.66;
 
 /* [Hidden] */
-
-peg_cap_length = 2;
-peg_cap_diameter = peg_body_diameter * 1.25;
 
 module torus(main_radius, tube_radius) {
     rotate_extrude() {
@@ -103,6 +108,10 @@ full_side_length = 25;
 cutout_offset = (full_side_length - side_length) / 2;
 large_cutout_offset = (full_side_length - short_side_length) / 2;
 short_tab_length = 10.8;
+
+full_snap_thickness = 6.8;
+lite_snap_thickness = 3.4;
+snap_diff_thickness = full_snap_thickness - lite_snap_thickness;
 
 module large_corner_cutouts() {
     linear_extrude(height = 5.3)
@@ -222,7 +231,8 @@ module side_slot_cutouts() {
     length = 11.4;
     width = 1;
     height = 0.4;
-    top_distance = 6.8 - 1.2;
+    top_shelf_thickness = 1.2;
+    top_distance = full_snap_thickness - top_shelf_thickness;
     
     translate([.75, 7, top_distance])
         rotate([0, 0, 90])
@@ -274,30 +284,52 @@ module snap_tab_large_template() {
     polyhedron(points=points, faces=faces);
 };
 
-module snap_tabs() {
-    // large tab at gravitational top
-    translate([(full_side_length+14)/2, full_side_length, 1.4])
-        rotate([90, 0, 180])
-            snap_tab_large_template();
+module snap_tab_small_template(fitment) {
+    scale([0.8, 0.5, fitment])
+        snap_tab_large_template();
+}
+
+module snap_tabs(type, fitment) {
+
+    // full or lite tab for top edge
+    if (type == "Full") {
+        translate([(full_side_length+14)/2, full_side_length, 1.4])
+            rotate([90, 0, 180])
+                snap_tab_large_template();
+    } else {
+        translate([(full_side_length+short_tab_length)/2+0.4, full_side_length, snap_diff_thickness])
+            rotate([90, 0, 180])
+                snap_tab_small_template(fitment);
+    }
     
     // short tab at bottom
-    translate([(full_side_length-short_tab_length)/2, 0, 3.4])
+    translate([(full_side_length-short_tab_length)/2, 0, snap_diff_thickness])
         rotate([90, 0, 0])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
     
     // short tab on left
-    translate([0, (full_side_length+short_tab_length)/2+0.4, 3.4])
+    translate([0, (full_side_length+short_tab_length)/2+0.4, snap_diff_thickness])
         rotate([90, 0, -90])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
     
     // short tab on right
-    translate([full_side_length, (full_side_length-short_tab_length)/2, 3.4])
+    translate([full_side_length, (full_side_length-short_tab_length)/2, snap_diff_thickness])
         rotate([90, 0, 90])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
 };
+
+module lite_snap_cutout() {
+    linear_extrude(height = snap_diff_thickness)
+        polygon(
+            points = [
+                [0, 0],
+                [0, 30],
+                [30, 30],
+                [30, 0]
+            ],
+            paths = [[0, 1, 2, 3]]
+        );
+}
 
 module bottom_half_snapfit_cutter() {
     rotate([90, 0, 90])
@@ -326,7 +358,7 @@ module bottom_half_snapfit_cutouts() {
 };
 
 module primary_box() {
-    linear_extrude(height = 6.8)
+    linear_extrude(height = full_snap_thickness)
         polygon(
             points = [
                 [0, cutout_offset],
@@ -342,7 +374,7 @@ module primary_box() {
         );
 };
 
-module opengrid_directional_snap() {
+module opengrid_directional_snap(type, fitment) {
     union() {
         difference() {
             primary_box();
@@ -352,8 +384,11 @@ module opengrid_directional_snap() {
             triangle_directional_cutout();
             side_slot_cutouts();
             bottom_half_snapfit_cutouts();
+            if (type == "Lite") {
+                lite_snap_cutout();
+            }
         };
-        snap_tabs();
+        snap_tabs(type = type, fitment = fitment);
     };
 };
 
@@ -362,11 +397,10 @@ module opengrid_directional_snap() {
 *//////////////////////////
 
 union() {
-    // Bare openGrid Snap (Regular)
-    opengrid_directional_snap();
-    snap_thickness = 6.8; // measured value from an actual snap
+    // Bare openGrid Snap
+    opengrid_directional_snap(type = snap_type, fitment = snap_fitment);
     
-    translate([12.5, 12.5, snap_thickness]) {
+    translate([12.5, 12.5, full_snap_thickness]) {
         // Fillet at base of peg
         filleted_flange(inner_diameter = peg_body_diameter, 
                         outer_diameter = min(peg_body_diameter*1.33, 22));
@@ -374,7 +408,7 @@ union() {
         // Completed peg with cap
         peg(body_length = peg_body_length, 
             body_diameter = peg_body_diameter,
-            cap_length = peg_cap ? peg_cap_length : 0,
+            cap_length = peg_cap_length,
             cap_diameter = peg_cap_diameter);
     };
 };
