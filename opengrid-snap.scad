@@ -1,16 +1,28 @@
-// Snap parameters
+// openGrid snap type for connecting to base plates.
+// The Full type is directional.
+snap_type = "Full"; // [Full, Lite]
+
+// The fitment affects the tightness of the snap when mounted (ease of removing the peg)
+// Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
+// A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
+snap_fitment = 0.66;
+
+/* [Hidden] */
+
+/*///////////////////////////
+    OPENGRID SNAP
+*////////////////////////////
+
 side_length = 18.2745;
 short_side_length = 15.1632;
-cell_width = 28;
 full_side_length = 25;
 cutout_offset = (full_side_length - side_length) / 2;
 large_cutout_offset = (full_side_length - short_side_length) / 2;
 short_tab_length = 10.8;
-snap_height = 6.8;
 
-/*///////////////////////////
-    OPENGRID DIRECTIONAL SNAP
-*////////////////////////////
+full_snap_thickness = 6.8;
+lite_snap_thickness = 3.4;
+snap_diff_thickness = full_snap_thickness - lite_snap_thickness;
 
 module large_corner_cutouts() {
     linear_extrude(height = 5.3)
@@ -130,7 +142,8 @@ module side_slot_cutouts() {
     length = 11.4;
     width = 1;
     height = 0.4;
-    top_distance = 6.8 - 1.2;
+    top_shelf_thickness = 1.2;
+    top_distance = full_snap_thickness - top_shelf_thickness;
     
     translate([.75, 7, top_distance])
         rotate([0, 0, 90])
@@ -182,30 +195,52 @@ module snap_tab_large_template() {
     polyhedron(points=points, faces=faces);
 };
 
-module snap_tabs() {
-    // large tab at gravitational top
-    translate([(full_side_length+14)/2, full_side_length, 1.4])
-        rotate([90, 0, 180])
-            snap_tab_large_template();
+module snap_tab_small_template(fitment) {
+    scale([0.8, 0.5, fitment])
+        snap_tab_large_template();
+}
+
+module snap_tabs(type, fitment) {
+
+    // full or lite tab for top edge
+    if (type == "Full") {
+        translate([(full_side_length+14)/2, full_side_length, 1.4])
+            rotate([90, 0, 180])
+                snap_tab_large_template();
+    } else {
+        translate([(full_side_length+short_tab_length)/2+0.4, full_side_length, snap_diff_thickness])
+            rotate([90, 0, 180])
+                snap_tab_small_template(fitment);
+    }
     
     // short tab at bottom
-    translate([(full_side_length-short_tab_length)/2, 0, 3.4])
+    translate([(full_side_length-short_tab_length)/2, 0, snap_diff_thickness])
         rotate([90, 0, 0])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
     
     // short tab on left
-    translate([0, (full_side_length+short_tab_length)/2+0.4, 3.4])
+    translate([0, (full_side_length+short_tab_length)/2+0.4, snap_diff_thickness])
         rotate([90, 0, -90])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
     
     // short tab on right
-    translate([full_side_length, (full_side_length-short_tab_length)/2, 3.4])
+    translate([full_side_length, (full_side_length-short_tab_length)/2, snap_diff_thickness])
         rotate([90, 0, 90])
-            scale([0.8, 0.5, 0.5])
-                snap_tab_large_template();
+            snap_tab_small_template(fitment);
 };
+
+module lite_snap_cutout() {
+    linear_extrude(height = snap_diff_thickness)
+        polygon(
+            points = [
+                [0, 0],
+                [0, 30],
+                [30, 30],
+                [30, 0]
+            ],
+            paths = [[0, 1, 2, 3]]
+        );
+}
 
 module bottom_half_snapfit_cutter() {
     rotate([90, 0, 90])
@@ -234,7 +269,7 @@ module bottom_half_snapfit_cutouts() {
 };
 
 module primary_box() {
-    linear_extrude(height = 6.8)
+    linear_extrude(height = full_snap_thickness)
         polygon(
             points = [
                 [0, cutout_offset],
@@ -250,7 +285,7 @@ module primary_box() {
         );
 };
 
-module opengrid_directional_snap() {
+module opengrid_snap(type, fitment) {
     union() {
         difference() {
             primary_box();
@@ -260,8 +295,11 @@ module opengrid_directional_snap() {
             triangle_directional_cutout();
             side_slot_cutouts();
             bottom_half_snapfit_cutouts();
+            if (type == "Lite") {
+                lite_snap_cutout();
+            }
         };
-        snap_tabs();
+        snap_tabs(type = type, fitment = fitment);
     };
 };
 
@@ -270,4 +308,4 @@ module opengrid_directional_snap() {
     FINAL ASSEMBLY
 *////////////////////////////
 
-opengrid_directional_snap();
+opengrid_snap("Full", 0.66);
