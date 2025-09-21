@@ -1,15 +1,15 @@
 $fn = 128;
 
-/*/////////////////////////
-    PARAMETRIC PEG
-*//////////////////////////
-        
+/* [Peg Parameters] */
+
 peg_body_length = 40;
 peg_body_diameter = 15;
 
 // To remove the cap entirely, set its length to 0
 peg_cap_length = 2;
 peg_cap_diameter = 19;
+
+/* [Snap Parameters] */
 
 // openGrid snap type for connecting to base plates
 snap_type = "Full"; // [Full, Lite]
@@ -20,6 +20,10 @@ snap_type = "Full"; // [Full, Lite]
 snap_fitment = 0.66;
 
 /* [Hidden] */
+
+/*/////////////////////////
+    PARAMETRIC PEG
+*//////////////////////////
 
 module torus(main_radius, tube_radius) {
     rotate_extrude() {

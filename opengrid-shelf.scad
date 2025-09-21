@@ -15,7 +15,7 @@ snap_type = "Full"; // [Full, Lite]
 // The fitment affects the tightness of the snap when mounted (ease of removing the peg)
 // Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
 // A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
-snap_fitment = 0.5;
+snap_fitment = 0.66;
 
 /* [Hidden] */
 

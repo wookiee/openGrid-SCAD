@@ -574,19 +574,19 @@ module positioned_bin() {
 };
 
 module positioned_dividers() {
-    inner_width = bin_width - wall_thickness*(width_sub_bins-1);
+    inner_width = bin_width - sub_bin_wall_thickness*(width_sub_bins+1);
     width_gap = inner_width / width_sub_bins;
-    inner_depth = bin_depth - wall_thickness*2;
+    inner_depth = bin_depth - sub_bin_wall_thickness*2;
     depth_gap = inner_depth / depth_sub_bins;
 
     for (i = [1 : width_sub_bins - 1]) {
-        translate([wall_thickness + width_gap*i - sub_bin_wall_thickness*i, 0, 0])
+        translate([wall_thickness + width_gap*i + sub_bin_wall_thickness*(i-1), 0, 0])
             rotate([0, 0, -90])
                 bin_divider(length = bin_depth - wall_thickness/2);
     }
     
     for (i = [1 : depth_sub_bins - 1]) {
-        translate([0, -wall_thickness - depth_gap*i - sub_bin_wall_thickness*i, 0])
+        translate([0, -wall_thickness - depth_gap*i - sub_bin_wall_thickness*(i-1), 0])
             bin_divider(length = bin_width - wall_thickness/2);
     }
 };
