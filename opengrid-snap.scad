@@ -1,6 +1,5 @@
 // openGrid snap type for connecting to base plates.
-// The Full type is directional.
-snap_type = "Full"; // [Full, Lite]
+snap_type = "Directional"; // [Lite, Full, Directional]
 
 // The fitment affects the tightness of the snap when mounted (ease of removing the peg)
 // Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
@@ -203,7 +202,7 @@ module snap_tab_small_template(fitment) {
 module snap_tabs(type, fitment) {
 
     // full or lite tab for top edge
-    if (type == "Full") {
+    if (type == "Directional") {
         translate([(full_side_length+14)/2, full_side_length, 1.4])
             rotate([90, 0, 180])
                 snap_tab_large_template();
@@ -292,7 +291,9 @@ module opengrid_snap(type, fitment) {
             large_corner_cutouts();
             corner_overhang_cutouts();
             bottom_slot_cutouts();
-            triangle_directional_cutout();
+            if (type == "Directional") {
+                triangle_directional_cutout();
+            }
             side_slot_cutouts();
             bottom_half_snapfit_cutouts();
             if (type == "Lite") {
@@ -308,4 +309,4 @@ module opengrid_snap(type, fitment) {
     FINAL ASSEMBLY
 *////////////////////////////
 
-opengrid_snap("Full", 0.66);
+opengrid_snap(type = "Directional", fitment = 0.66);
