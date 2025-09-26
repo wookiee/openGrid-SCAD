@@ -2,8 +2,8 @@ $fn = 128;
 
 /* [Bin Parameters] */
 
-bin_width = 32;
-bin_depth = 32;
+bin_width = 100;
+bin_depth = 40;
 bin_height = 32;
 
 wall_thickness = 2;
@@ -12,6 +12,10 @@ floor_thickness = 2;
 width_sub_bins = 1;
 depth_sub_bins = 1;
 sub_bin_wall_thickness = 2;
+
+// Snaps on the back are for wall-mounted openGrid tiles.
+// Snaps on the bottom are for horizontally-mounted openGrid tiles (eg, in a drawer, Gridfinity-style)
+snap_position = "Back"; // [Back, Bottom]
 
 /* [Snap Parameters] */
 
@@ -541,9 +545,9 @@ cell_width = 28;
 
 snap_width = full_side_length;
 snap_margin = (cell_width - snap_width) / 2; // 1.5mm
-total_width = bin_width + wall_thickness - wall_chamfer_outer*2;
+snap_surface_width = bin_width - wall_chamfer_outer*2;
 
-cell_count = floor(bin_width / cell_width);
+cell_count = floor(snap_surface_width / cell_width);
 
 even_cell_count = (cell_count % 2 == 0) ? true : false;
 snap_count = (even_cell_count) ? floor(cell_count / 2) : floor(cell_count / 2) + 1;
@@ -551,22 +555,33 @@ even_snap_count = (snap_count % 2 == 0) ? true : false;
 gap_count = (even_cell_count) ? floor(cell_count / 2) - 1 : floor(cell_count/2);
 gap_width = cell_width;
 
-snap_remainder = total_width - (cell_count * cell_width);
-outer_snap_offset = even_cell_count ? (snap_remainder + cell_width)/2 : snap_remainder / 2;
+snap_remainder = snap_surface_width - (cell_count * cell_width);
+outer_snap_offset = (snap_remainder / 2) + snap_margin + wall_chamfer_outer;
 
-echo("total_width = ", total_width);
+echo("snap_surface_width = ", snap_surface_width);
 echo("bin_width = ", bin_width);
 echo("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder);
 echo("outer_snap_offset = ", outer_snap_offset);
 echo("cell_count = ", cell_count, " / ", bin_width/cell_width);
 
 module positioned_snaps() {
-    snap_thickness = snap_type == "Full" ? full_snap_thickness : lite_snap_thickness;
-    for (i = [0 : snap_count - 1]) {
-        translate([cell_width*2*i + wall_chamfer_outer + outer_snap_offset, full_snap_thickness, bin_height - cell_width])
-            rotate([90, 0 , 0])
+    snap_thickness = snap_type == "Lite" ? lite_snap_thickness : full_snap_thickness;
+    
+    // When snaps are on the back (hanging orientation), place snaps along the top of the back surface at regular intervals.
+    // If the snaps are on the bottom (drawer/tabletop orientation), place snaps along the back of the bottom surface similarly.
+    if (snap_position == "Back") {
+        for (i = [0 : snap_count - 1]) {
+            translate([cell_width*2*i + outer_snap_offset, full_snap_thickness, bin_height - cell_width])
+                rotate([90, 0 , 0])
+                    opengrid_snap(type = snap_type, fitment = snap_fitment);
+        }
+    } else if (snap_position == "Bottom") {
+        for (i = [0 : snap_count - 1]) {
+            translate([cell_width*2*i + outer_snap_offset, -(cell_width + snap_margin), -snap_thickness])
                 opengrid_snap(type = snap_type, fitment = snap_fitment);
+        }
     }
+
 };
 
 module positioned_bin() {
@@ -580,15 +595,19 @@ module positioned_dividers() {
     inner_depth = bin_depth - sub_bin_wall_thickness*2;
     depth_gap = inner_depth / depth_sub_bins;
 
-    for (i = [1 : width_sub_bins - 1]) {
-        translate([wall_thickness + width_gap*i + sub_bin_wall_thickness*(i-1), 0, 0])
-            rotate([0, 0, -90])
-                bin_divider(length = bin_depth - wall_thickness/2);
+    if (width_sub_bins > 1) {
+        for (i = [1 : width_sub_bins - 1]) {
+            translate([wall_thickness + width_gap*i + sub_bin_wall_thickness*(i-1), 0, 0])
+                rotate([0, 0, -90])
+                    bin_divider(length = bin_depth - wall_thickness/2);
+        }
     }
     
-    for (i = [1 : depth_sub_bins - 1]) {
-        translate([0, -wall_thickness - depth_gap*i - sub_bin_wall_thickness*(i-1), 0])
-            bin_divider(length = bin_width - wall_thickness/2);
+    if (depth_sub_bins > 1) {
+        for (i = [1 : depth_sub_bins - 1]) {
+            translate([0, -wall_thickness - depth_gap*i - sub_bin_wall_thickness*(i-1), 0])
+                bin_divider(length = bin_width - wall_thickness/2);
+        }
     }
 };
 
