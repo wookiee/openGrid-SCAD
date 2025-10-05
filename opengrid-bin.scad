@@ -285,8 +285,7 @@ module corner_overhang_cutout_template() {
                         [0, 0],
                         [0, 1.1],
                         [1.1, 0]
-                    ],
-                    paths = [[0, 1, 2]]
+                    ]
                 );
 };
 
@@ -317,19 +316,36 @@ module bottom_slot_cutout_template() {
         };
 };
 
-module bottom_slot_cutouts() {
-    rotate([13, 0, 0])
-        translate([6.75, 2,-7])
-            scale([1, 1, 2])
-            bottom_slot_cutout_template();
+module bottom_slot_cutouts(snap_type) {
+    slot_inset = 1.5;
 
-    translate([1, 7, -0.01])
+    if (snap_type == "Directional") {
+        rotate([13, 0, 0])
+            translate([6.75, slot_inset,-7])
+                scale([1, 1, 2])
+                    bottom_slot_cutout_template();
+    } else {
+        translate([6.75, slot_inset,-7])
+            scale([1, 1, 2])
+                bottom_slot_cutout_template();
+    }
+
+    // Left side
+    translate([slot_inset, 7, -0.01])
         rotate([0, 0, 90])
             bottom_slot_cutout_template();
     
-    translate([24, 7, -0.01])
+    // Right side
+    translate([full_side_length - slot_inset, 7, -0.01])
         rotate([0, 0, 90])
             bottom_slot_cutout_template();
+    
+    // Top, for non-Directional snaps
+    if (snap_type != "Directional") {
+        translate([6.75, full_side_length - slot_inset,-7])
+            scale([1, 1, 2])
+                bottom_slot_cutout_template();
+    }
 };
 
 // Generates a cutout of an equilateral triangle
@@ -356,32 +372,40 @@ module triangle_directional_cutout() {
         triangle_directional_cutout_template(triangle_side_length, cutout_thickness);
 };
 
-module side_slot_cutouts() {
+module side_slot_cutouts(snap_type) {
     length = 11.4;
     width = 1;
     height = 0.4;
     top_shelf_thickness = 1.2;
     top_distance = full_snap_thickness - top_shelf_thickness;
     
+    // Left side
     translate([.75, 7, top_distance])
         rotate([0, 0, 90])
             cube([length, width, height]);
-            
+    
+    // Right side
     translate([full_side_length-width+width, 7, top_distance])
         rotate([0, 0, 90])
             cube([length, width, height]);
     
+    // Bottom
     translate([7, 0, top_distance])
         cube([length, width, height]);
-        
+    
+    // Top, for non-Directional snaps
+    if (snap_type != "Directional") {
+        translate([7, full_side_length, top_distance])
+            cube([length, width, height]);
+    }
 };
 
-module snap_tab_large_template() {
-    base_x = 14;
-    base_y = 4;
-    top_x = 9.5;
-    top_y = 2.2;
-    height = 0.8;
+module snap_tab(x_scale, y_scale, z_scale) {
+    base_x = 14 * x_scale;
+    base_y = 4 * y_scale;
+    top_x = 9.5 * x_scale;
+    top_y = 2.2 * y_scale;
+    height = 0.8 * z_scale;
 
     // Offsets to center the top over the base
     dx = (base_x - top_x) / 2;
@@ -389,62 +413,69 @@ module snap_tab_large_template() {
 
     points = [
         // Base (Z = 0)
-        [0,      0,      0],  // 0
-        [base_x, 0,      0],  // 1
-        [base_x, base_y, 0],  // 2
-        [0,      base_y, 0],  // 3
+        [0,      0,      0],  // 0, bottom-left of big face
+        [base_x, 0,      0],  // 1, bottom-right of big face
+        [base_x, base_y, 0],  // 2, top-right of big face
+        [0,      base_y, 0],  // 3, top-left of big face
 
         // Top (Z = height), centered
-        [dx,        dy,        height],  // 4
-        [dx+top_x,  dy,        height],  // 5
-        [dx+top_x,  dy+top_y,  height],  // 6
-        [dx,        dy+top_y,  height]   // 7
+        [dx,        dy,        height],  // 4, bottom-left of small face
+        [dx+top_x,  dy,        height],  // 5, bottom-right of small face
+        [dx+top_x,  dy+top_y,  height],  // 6, top-right of small face
+        [dx,        dy+top_y,  height]   // 7, top-left of small face
     ];
 
     faces = [
-        [0, 1, 2, 3],  // bottom
+        [0, 3, 2, 1],  // bottom
+        [0, 1, 5, 4],  // side 1, front
+        [0, 4, 7, 3],  // side 2, left
+        [1, 2, 6, 5],  // side 3, right
+        [2, 3, 7, 6],  // side 4, rear
         [4, 5, 6, 7],  // top
-        [0, 1, 5, 4],  // side 1
-        [1, 2, 6, 5],  // side 2
-        [2, 3, 7, 6],  // side 3
-        [3, 0, 4, 7]   // side 4
     ];
 
     polyhedron(points=points, faces=faces);
 };
 
-module snap_tab_small_template(fitment) {
-    scale([0.8, 0.5, fitment])
-        snap_tab_large_template();
-}
+module snap_tab_large(fitment) {
+    snap_tab(x_scale = 1.0, y_scale = 1.0, z_scale = fitment);
+};
 
-module snap_tabs(type, fitment) {
+module snap_tab_small(fitment) {
+    snap_tab(x_scale = 0.8, y_scale = 0.5, z_scale = fitment);
+};
 
+module top_tab(type, fitment) {
     // full or lite tab for top edge
     if (type == "Directional") {
-        translate([(full_side_length+14)/2, full_side_length, 1.4])
+        // full tab for directional snaps
+        translate([(full_side_length+14)/2, full_side_length - part_overlap, 1.4])
             rotate([90, 0, 180])
-                snap_tab_large_template();
+                snap_tab_large(fitment = 1.0);
     } else {
-        translate([(full_side_length+short_tab_length)/2+0.4, full_side_length, snap_diff_thickness])
+        // lite tab for non-directional snaps
+        translate([(full_side_length+short_tab_length)/2+0.4, full_side_length - part_overlap, snap_diff_thickness])
             rotate([90, 0, 180])
-                snap_tab_small_template(fitment);
+                snap_tab_small(fitment);
     }
-    
-    // short tab at bottom
-    translate([(full_side_length-short_tab_length)/2, 0, snap_diff_thickness])
-        rotate([90, 0, 0])
-            snap_tab_small_template(fitment);
-    
-    // short tab on left
-    translate([0, (full_side_length+short_tab_length)/2+0.4, snap_diff_thickness])
-        rotate([90, 0, -90])
-            snap_tab_small_template(fitment);
-    
-    // short tab on right
-    translate([full_side_length, (full_side_length-short_tab_length)/2, snap_diff_thickness])
+};
+
+module right_tab(fitment) {
+    translate([full_side_length - part_overlap, (full_side_length-short_tab_length)/2, snap_diff_thickness])
         rotate([90, 0, 90])
-            snap_tab_small_template(fitment);
+            snap_tab_small(fitment);
+};
+
+module left_tab(fitment) {
+    translate([part_overlap, (full_side_length+short_tab_length)/2+0.4, snap_diff_thickness])
+        rotate([90, 0, -90])
+            snap_tab_small(fitment);
+};
+
+module bottom_tab(fitment) {
+    translate([(full_side_length-short_tab_length)/2, part_overlap, snap_diff_thickness])
+        rotate([90, 0, 0])
+            snap_tab_small(fitment);
 };
 
 module lite_snap_cutout() {
@@ -455,8 +486,7 @@ module lite_snap_cutout() {
                 [0, 30],
                 [30, 30],
                 [30, 0]
-            ],
-            paths = [[0, 1, 2, 3]]
+            ]
         );
 }
 
@@ -468,14 +498,14 @@ module bottom_half_snapfit_cutter() {
                     [0, 0],
                     [0.8, 0], 
                     [0, 3.4]
-                ],
-                paths = [[0, 1, 2]]
+                ]
             );
 };
 
 module bottom_half_snapfit_cutouts() {
     translate([3, 0, 0])
         bottom_half_snapfit_cutter();
+
     translate([full_side_length-cutout_offset-1.555, 0, 0])
         rotate([0, 0, 45])
             bottom_half_snapfit_cutter();
@@ -497,28 +527,34 @@ module primary_box() {
                 [full_side_length, cutout_offset],
                 [cutout_offset+side_length, 0],
                 [cutout_offset, 0]
-            ],
-            paths = [[0, 1, 2, 3, 4, 5, 6, 7]]
+            ]
         );
 };
 
-module opengrid_snap(type, fitment) {
+module opengrid_snap(snap_type, fitment) {
     union() {
         difference() {
             primary_box();
+
             large_corner_cutouts();
             corner_overhang_cutouts();
-            bottom_slot_cutouts();
-            if (type == "Directional") {
+
+            bottom_slot_cutouts(snap_type);
+            side_slot_cutouts(snap_type);
+            
+            if (snap_type == "Directional") {
                 triangle_directional_cutout();
+                bottom_half_snapfit_cutouts();
             }
-            side_slot_cutouts();
-            bottom_half_snapfit_cutouts();
-            if (type == "Lite") {
+
+            if (snap_type == "Lite") {
                 lite_snap_cutout();
             }
         };
-        snap_tabs(type = type, fitment = fitment);
+        top_tab(type = snap_type, fitment = fitment);
+        bottom_tab(fitment = fitment);
+        left_tab(fitment = fitment);
+        right_tab(fitment = fitment);
     };
 };
 
@@ -556,21 +592,22 @@ module positioned_snaps() {
     // If the snaps are on the bottom (drawer/tabletop orientation), place snaps along the back of the bottom surface similarly.
     if (snap_position == "Back") {
         for (i = [0 : snap_count - 1]) {
-            translate([cell_width*2*i + outer_snap_offset, full_snap_thickness, bin_height - cell_width])
+            translate([cell_width*2*i + outer_snap_offset, full_snap_thickness - 0.1, bin_height - cell_width])
                 rotate([90, 0 , 0])
-                    opengrid_snap(type = snap_type, fitment = snap_fitment);
+                    opengrid_snap(snap_type = snap_type, fitment = snap_fitment);
         }
     } else if (snap_position == "Bottom") {
         for (i = [0 : snap_count - 1]) {
             translate([cell_width*2*i + outer_snap_offset, -(cell_width + snap_margin), -snap_thickness])
-                opengrid_snap(type = snap_type, fitment = snap_fitment);
+                opengrid_snap(snap_type = snap_type, fitment = snap_fitment);
         }
     }
 
 };
 
 module positioned_bin() {
-    translate([0, -bin_depth, 0])        bin();
+    translate([0, -bin_depth, 0])
+        bin();
 };
 
 module positioned_dividers() {
