@@ -332,41 +332,28 @@ module bottom_slot_cutouts() {
             bottom_slot_cutout_template();
 };
 
-module triangle_directional_cutout_template() {
-    base_size = 3;
-    top_scale = 0.75;
-    height = 0.4;
-    sin60 = 0.866;
-    cos60 = 0.5;
-    
-    // 2D base triangle points
-    base = [
-        [0, -base_size],
-        [base_size * sin60, base_size * cos60],
-        [-base_size * sin60, base_size * cos60]
-    ];
-    
-    // Convert to 3D
-    base_3d = [ for (v = base) [v[0], v[1], 0] ];
-    top     = [ for (v = base) [v[0] * top_scale, v[1] * top_scale, height] ];
-    
-    points = concat(base_3d, top);
-    
-    faces = [
-        [0, 1, 2],       // bottom
-        [3, 4, 5],       // top
-        [0, 1, 4], [0, 4, 3],   // side 1
-        [1, 2, 5], [1, 5, 4],   // side 2
-        [2, 0, 3], [2, 3, 5]    // side 3
-    ];
-    
-    polyhedron(points = points, faces = faces);
+// Generates a cutout of an equilateral triangle
+// used to emboss as a directional indicator for Directional snaps
+module triangle_directional_cutout_template(side_length, thickness) {
+
+    height = side_length * 0.866; // sin60 = 0.866
+
+    linear_extrude(height = thickness)
+        polygon(
+            points = [
+                [0, 0],
+                [side_length, 0],
+                [side_length / 2.0, height],
+            ],
+        );
 };
 
 module triangle_directional_cutout() {
-    translate([full_side_length/2, full_side_length*0.85, -0.1])
-        rotate([0, 0, 180])
-            triangle_directional_cutout_template();
+    triangle_side_length = 3;
+    cutout_thickness = 0.4;
+
+    translate([(full_side_length-triangle_side_length)/2, full_side_length - 6, -0.1])
+        triangle_directional_cutout_template(triangle_side_length, cutout_thickness);
 };
 
 module side_slot_cutouts() {
@@ -489,7 +476,6 @@ module bottom_half_snapfit_cutter() {
 module bottom_half_snapfit_cutouts() {
     translate([3, 0, 0])
         bottom_half_snapfit_cutter();
-
     translate([full_side_length-cutout_offset-1.555, 0, 0])
         rotate([0, 0, 45])
             bottom_half_snapfit_cutter();
