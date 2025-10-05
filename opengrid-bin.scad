@@ -251,6 +251,8 @@ cutout_offset = (full_side_length - side_length) / 2;
 large_cutout_offset = (full_side_length - short_side_length) / 2;
 short_tab_length = 10.8;
 
+part_overlap = 0.05; // For ensuring manifold geometry during boolean operations
+
 full_snap_thickness = 6.8;
 lite_snap_thickness = 3.4;
 snap_diff_thickness = full_snap_thickness - lite_snap_thickness;
@@ -632,8 +634,9 @@ module positioned_dividers() {
     }
 };
 
+// Final Product
 union() {
-    positioned_bin();
-    positioned_snaps();
+    render(convexity = 10) positioned_snaps();
+    render(convexity = 10) positioned_bin();
     positioned_dividers();
 };
