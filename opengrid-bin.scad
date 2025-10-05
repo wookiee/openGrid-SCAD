@@ -13,10 +13,6 @@ width_sub_bins = 1;
 depth_sub_bins = 1;
 sub_bin_wall_thickness = 2;
 
-// Snaps on the back are for wall-mounted openGrid tiles.
-// Snaps on the bottom are for horizontally-mounted openGrid tiles (eg, in a drawer, Gridfinity-style)
-snap_position = "Back"; // [Back, Bottom]
-
 /* [Snap Parameters] */
 
 // openGrid snap type for connecting to base plates.
@@ -26,6 +22,12 @@ snap_type = "Directional"; // [Lite, Full, Directional]
 // Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
 // A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
 snap_fitment = 0.66;
+
+/* [Experimental Parameters] */
+
+// Snaps on the back are for wall-mounted openGrid tiles.
+// Snaps on the bottom are for horizontally-mounted openGrid tiles (eg, in a drawer, Gridfinity-style)
+snap_position = "Back"; // [Back, Bottom]
 
 /* [Hidden] */
 
