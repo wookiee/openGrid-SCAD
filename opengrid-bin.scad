@@ -557,11 +557,11 @@ gap_width = cell_width;
 snap_remainder = snap_surface_width - (cell_count * cell_width);
 outer_snap_offset = (snap_remainder / 2) + snap_margin + wall_chamfer_outer;
 
-echo("snap_surface_width = ", snap_surface_width);
-echo("bin_width = ", bin_width);
-echo("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder);
-echo("outer_snap_offset = ", outer_snap_offset);
-echo("cell_count = ", cell_count, " / ", bin_width/cell_width);
+// echo(str("snap_surface_width = ", snap_surface_width));
+// echo(str("bin_width = ", bin_width));
+// echo(str("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder));
+// echo(str("outer_snap_offset = ", outer_snap_offset));
+// echo(str("cell_count = ", cell_count, " (", bin_width/cell_width, ")"));
 
 module positioned_snaps() {
     snap_thickness = snap_type == "Lite" ? lite_snap_thickness : full_snap_thickness;
@@ -584,8 +584,7 @@ module positioned_snaps() {
 };
 
 module positioned_bin() {
-    translate([0, -bin_depth, 0])
-        bin();
+    translate([0, -bin_depth, 0])        bin();
 };
 
 module positioned_dividers() {
