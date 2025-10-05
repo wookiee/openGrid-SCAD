@@ -40,7 +40,6 @@ lip_chamfer = wall_thickness/2;
 module bin() {
 	polyhedron(
 		points = [
-		
 			/* SW Corner */ 
 		
 			// SW bottom outer corner
@@ -131,12 +130,12 @@ module bin() {
 		],
 		faces = [
 			// SW Corner
-			[0, 1, 2],	        // outer bottom face
-			[1, 2, 6, 3],       // outer face
+			[0, 1, 2],	        // outer bottom face 
+			[1, 3, 6, 2],       // outer face
 			[3, 4, 7, 6],       // outer lip
 			[4, 5, 8, 7],       // inner lip
-			[5, 8, 10, 9],      // inner face
-			[9, 10, 11],        // inner bottom face
+			[5, 9, 10, 8],      // inner face
+			[9, 11, 10],        // inner bottom face
 			
 			// W Wall
             [0, 2, 13, 12],     // outer bottom face
@@ -148,54 +147,54 @@ module bin() {
 			
 			// NW Corner
 			[12, 13, 14],       // outer bottom face
-			[13, 14, 18, 15],   // outer face
+			[13, 15, 18, 14],   // outer face
 			[15, 16, 19, 18],   // outer lip
 			[16, 17, 20, 19],   // inner lip
 			[17, 21, 22, 20],   // inner face
 			[23, 22, 21],       // inner bottom face
 			
 			// N Face
-            [14, 12, 24, 26],   // outer bottom face
-			[18, 14, 26, 30],   // outer face
+            [14, 26, 24, 12],   // outer bottom face
+			[18, 30, 26, 14],   // outer face
 			[18, 19, 31, 30],   // outer lip
 			[19, 20, 32, 31],   // inner lip
 			[20, 22, 34, 32],   // inner face
 			[22, 23, 35, 34],   // inner bottom face
 			
 			// NE Corner
-            [24, 25, 26],       // outer bottom face
-			[26, 25, 27, 30],   // outer face
+            [26, 25, 24],       // outer bottom face
+			[25, 26, 30, 27],   // outer face
 			[30, 31, 28, 27],   // outer lip
 			[31, 32, 29, 28],   // inner lip
 			[32, 34, 33, 29],   // inner face
 			[33, 34, 35],       // inner bottom face
 			
 			// E Face
-            [25, 24, 36, 38],   // outer bottom face
-			[27, 25, 38, 42],   // outer face
+            [24, 25, 38, 36],   // outer bottom face
+			[25, 27, 42, 38],   // outer face
 			[27, 28, 43, 42],   // outer lip
 			[28, 29, 44, 43],   // inner lip
 			[29, 33, 46, 44],   // inner face
 			[33, 35, 47, 46],   // inner bottom face
 			
 			// SE Corner
-            [36, 37, 38],       // outer bottom face
-			[37, 39, 42, 38],   // outer face
+            [38, 37, 36],       // outer bottom face
+			[38, 42, 39, 37],   // outer face
 			[42, 43, 40, 39],   // outer lip
 			[43, 44, 41, 40],   // inner lip
 			[46, 45, 41, 44],   // inner face
 			[45, 46, 47],       // inner bottom face
 			
 			// S Face
-            [0, 1, 37, 36],    // outer bottom face
-			[1, 3, 39, 37],     // outer face
+            [0, 36, 37, 1],    // outer bottom face
+			[1, 37, 39, 3],     // outer face
 			[4, 3, 39, 40],     // outer lip
 			[5, 4, 40, 41],     // inner lip
 			[9, 5, 41, 45],     // inner face
 			[11, 9, 45, 47],    // inner bottom face
             
             // Bottom/outer face
-            [0, 36, 24, 12],
+            [0, 12, 24, 36],
             
             // Top/inner face
 			[11, 47, 35, 23]
