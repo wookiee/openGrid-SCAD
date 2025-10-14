@@ -246,11 +246,14 @@ module bin_divider(length) {
     OPENGRID SNAP
 *////////////////////////////
 
-side_length = 18.2745;
+cell_width = 28;
+snap_width = 25;
+snap_wall = cell_width - snap_width; // thickness of wall between snaps
+snap_margin = snap_wall / 2; // thickness of one cell's portion of the wall
+long_side_length = 18.2745;
 short_side_length = 15.1632;
-full_side_length = 25;
-cutout_offset = (full_side_length - side_length) / 2;
-large_cutout_offset = (full_side_length - short_side_length) / 2;
+cutout_offset = (snap_width - long_side_length) / 2;
+large_cutout_offset = (snap_width - short_side_length) / 2;
 short_tab_length = 10.8;
 
 part_overlap = 0.05; // For ensuring manifold geometry during boolean operations
@@ -266,15 +269,15 @@ module large_corner_cutouts() {
                 [0,0],
                 [0, large_cutout_offset],
                 [large_cutout_offset, 0],
-                [0, full_side_length-large_cutout_offset],
-                [0, full_side_length],
-                [large_cutout_offset, full_side_length],
-                [full_side_length-large_cutout_offset, full_side_length],
-                [full_side_length, full_side_length],
-                [full_side_length, full_side_length-large_cutout_offset],
-                [full_side_length, large_cutout_offset],
-                [full_side_length, 0],
-                [full_side_length-large_cutout_offset, 0]
+                [0, snap_width-large_cutout_offset],
+                [0, snap_width],
+                [large_cutout_offset, snap_width],
+                [snap_width-large_cutout_offset, snap_width],
+                [snap_width, snap_width],
+                [snap_width, snap_width-large_cutout_offset],
+                [snap_width, large_cutout_offset],
+                [snap_width, 0],
+                [snap_width-large_cutout_offset, 0]
             ],
             paths = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
         );
@@ -340,13 +343,13 @@ module bottom_slot_cutouts(snap_type) {
             bottom_slot_cutout_template();
     
     // Right side
-    translate([full_side_length - slot_inset, 7, -0.01])
+    translate([snap_width - slot_inset, 7, -0.01])
         rotate([0, 0, 90])
             bottom_slot_cutout_template();
     
     // Top, for non-Directional snaps
     if (snap_type != "Directional") {
-        translate([6.75, full_side_length - slot_inset,-7])
+        translate([6.75, snap_width - slot_inset,-7])
             scale([1, 1, 2])
                 bottom_slot_cutout_template();
     }
@@ -372,7 +375,7 @@ module triangle_directional_cutout() {
     triangle_side_length = 3;
     cutout_thickness = 0.4;
 
-    translate([(full_side_length-triangle_side_length)/2, full_side_length - 6, -0.1])
+    translate([(snap_width-triangle_side_length)/2, snap_width - 6, -0.1])
         triangle_directional_cutout_template(triangle_side_length, cutout_thickness);
 };
 
@@ -389,7 +392,7 @@ module side_slot_cutouts(snap_type) {
             cube([length, width, height]);
     
     // Right side
-    translate([full_side_length-width+width, 7, top_distance])
+    translate([snap_width-width+width, 7, top_distance])
         rotate([0, 0, 90])
             cube([length, width, height]);
     
@@ -399,7 +402,7 @@ module side_slot_cutouts(snap_type) {
     
     // Top, for non-Directional snaps
     if (snap_type != "Directional") {
-        translate([7, full_side_length, top_distance])
+        translate([7, snap_width, top_distance])
             cube([length, width, height]);
     }
 };
@@ -453,31 +456,31 @@ module top_tab(type, fitment) {
     // full or lite tab for top edge
     if (type == "Directional") {
         // full tab for directional snaps
-        translate([(full_side_length+14)/2, full_side_length - part_overlap, 1.4])
+        translate([(snap_width+14)/2, snap_width - part_overlap, 1.4])
             rotate([90, 0, 180])
                 snap_tab_large(fitment = 1.0);
     } else {
         // lite tab for non-directional snaps
-        translate([(full_side_length+short_tab_length)/2+0.4, full_side_length - part_overlap, snap_diff_thickness])
+        translate([(snap_width+short_tab_length)/2+0.4, snap_width - part_overlap, snap_diff_thickness])
             rotate([90, 0, 180])
                 snap_tab_small(fitment);
     }
 };
 
 module right_tab(fitment) {
-    translate([full_side_length - part_overlap, (full_side_length-short_tab_length)/2, snap_diff_thickness])
+    translate([snap_width - part_overlap, (snap_width-short_tab_length)/2, snap_diff_thickness])
         rotate([90, 0, 90])
             snap_tab_small(fitment);
 };
 
 module left_tab(fitment) {
-    translate([part_overlap, (full_side_length+short_tab_length)/2+0.4, snap_diff_thickness])
+    translate([part_overlap, (snap_width+short_tab_length)/2+0.4, snap_diff_thickness])
         rotate([90, 0, -90])
             snap_tab_small(fitment);
 };
 
 module bottom_tab(fitment) {
-    translate([(full_side_length-short_tab_length)/2, part_overlap, snap_diff_thickness])
+    translate([(snap_width-short_tab_length)/2, part_overlap, snap_diff_thickness])
         rotate([90, 0, 0])
             snap_tab_small(fitment);
 };
@@ -510,7 +513,7 @@ module bottom_half_snapfit_cutouts() {
     translate([3, 0, 0])
         bottom_half_snapfit_cutter();
 
-    translate([full_side_length-cutout_offset-1.555, 0, 0])
+    translate([snap_width-cutout_offset-1.555, 0, 0])
         rotate([0, 0, 45])
             bottom_half_snapfit_cutter();
             
@@ -524,12 +527,12 @@ module primary_box() {
         polygon(
             points = [
                 [0, cutout_offset],
-                [0, cutout_offset+side_length],
-                [cutout_offset, full_side_length],
-                [cutout_offset+side_length, full_side_length],
-                [full_side_length, cutout_offset+side_length],
-                [full_side_length, cutout_offset],
-                [cutout_offset+side_length, 0],
+                [0, cutout_offset+long_side_length],
+                [cutout_offset, snap_width],
+                [cutout_offset+long_side_length, snap_width],
+                [snap_width, cutout_offset+long_side_length],
+                [snap_width, cutout_offset],
+                [cutout_offset+long_side_length, 0],
                 [cutout_offset, 0]
             ]
         );
