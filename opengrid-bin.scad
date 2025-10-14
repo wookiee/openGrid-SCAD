@@ -9,6 +9,7 @@ bin_height = 32;
 wall_thickness = 2;
 floor_thickness = 2;
 
+// You can subdivide the bin into sub-bins along its width and depth.
 width_sub_bins = 1;
 depth_sub_bins = 1;
 sub_bin_wall_thickness = 2;
@@ -18,16 +19,15 @@ sub_bin_wall_thickness = 2;
 // openGrid snap type for connecting to base plates.
 snap_type = "Directional"; // [Lite, Full, Directional]
 
+// The number of snaps to position along the connecting face of the bin.
+// The snaps will be evenly spaced with one openGrid cell between them, grouped in the center of the connecting face.
+// A value of `-1` means that the maximum number of snaps will be used.
+preferred_snap_count = 10;
+
 // The fitment affects the tightness of the snap when mounted (ease of removing the peg)
 // Use a value between 0.0 and 1.0, with 0.5 meaning a standard fit.
 // A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
-snap_fitment = 0.66;
-
-/* [Experimental Parameters] */
-
-// Snaps on the back are for wall-mounted openGrid tiles.
-// Snaps on the bottom are for horizontally-mounted openGrid tiles (eg, in a drawer, Gridfinity-style)
-snap_position = "Back"; // [Back, Bottom]
+snap_fitment = 0.5;
 
 /* [Hidden] */
 
@@ -566,50 +566,38 @@ module opengrid_snap(snap_type, fitment) {
 };
 
 /*///////////////////////////
-    FINAL ASSEMBLY
+    ASSEMBLY MODULES
 *////////////////////////////
 
-cell_width = 28;
-
-snap_width = full_side_length;
-snap_margin = (cell_width - snap_width) / 2; // 1.5mm
-snap_surface_width = bin_width - wall_chamfer_outer*2;
-
-cell_count = floor(snap_surface_width / cell_width);
-
-even_cell_count = (cell_count % 2 == 0) ? true : false;
-snap_count = (even_cell_count) ? floor(cell_count / 2) : floor(cell_count / 2) + 1;
-even_snap_count = (snap_count % 2 == 0) ? true : false;
-gap_count = (even_cell_count) ? floor(cell_count / 2) - 1 : floor(cell_count/2);
-gap_width = cell_width;
-
-snap_remainder = snap_surface_width - (cell_count * cell_width);
-outer_snap_offset = (snap_remainder / 2) + snap_margin + wall_chamfer_outer;
-
-// echo(str("snap_surface_width = ", snap_surface_width));
-// echo(str("bin_width = ", bin_width));
-// echo(str("snap_count = ", snap_count, ", gap count = ", gap_count, ", remainder = ", snap_remainder));
-// echo(str("outer_snap_offset = ", outer_snap_offset));
-// echo(str("cell_count = ", cell_count, " (", bin_width/cell_width, ")"));
-
 module positioned_snaps() {
+
+    // Figure out how many snaps to place, and their spacing
+    snap_surface_width = bin_width - (wall_chamfer_outer * 2);
+    cell_count = floor(snap_surface_width / cell_width);
+    cell_count_is_even = cell_count % 2 == 0 ? true : false;
+    max_snap_count = cell_count_is_even ? floor(cell_count/2) : floor(cell_count/2) + 1; // max number of snaps that we could fit with gaps between
+    user_snap_count = preferred_snap_count == -1 ? max_snap_count : preferred_snap_count; // user's preferred snap count (max if -1)
+    snap_count = min(max_snap_count, user_snap_count); // resolved actual number of snaps to use
+    snap_count_is_even = snap_count % 2 == 0 ? true : false;
+
+    // echo(str("Snap surface width: ", snap_surface_width));
+    // echo(str("Cell count: ", cell_count));
+    // echo(str("Max snap count: ", max_snap_count));
+    // echo(str("User snap count: ", user_snap_count));
+    // echo(str("Snap count: ", snap_count));
+    // echo(str("Snap count is even: ", snap_count_is_even));
+
     snap_thickness = snap_type == "Lite" ? lite_snap_thickness : full_snap_thickness;
+
+    snap_group_width = snap_count_is_even ? (cell_width * snap_count * 2) - cell_width : (cell_width * snap_count * 2);
+    snap_group_offset = snap_count_is_even ? (snap_surface_width - snap_group_width) / 2 + wall_chamfer_outer : (snap_surface_width - snap_group_width) / 2 + wall_chamfer_outer + cell_width/2;
     
-    // When snaps are on the back (hanging orientation), place snaps along the top of the back surface at regular intervals.
-    // If the snaps are on the bottom (drawer/tabletop orientation), place snaps along the back of the bottom surface similarly.
-    if (snap_position == "Back") {
+    translate([snap_group_offset, full_snap_thickness - 0.1, bin_height - cell_width])
         for (i = [0 : snap_count - 1]) {
-            translate([cell_width*2*i + outer_snap_offset, full_snap_thickness - 0.1, bin_height - cell_width])
+            translate([(cell_width)*2*i + snap_margin, 0, 0])
                 rotate([90, 0 , 0])
                     opengrid_snap(snap_type = snap_type, fitment = snap_fitment);
         }
-    } else if (snap_position == "Bottom") {
-        for (i = [0 : snap_count - 1]) {
-            translate([cell_width*2*i + outer_snap_offset, -(cell_width + snap_margin), -snap_thickness])
-                opengrid_snap(snap_type = snap_type, fitment = snap_fitment);
-        }
-    }
-
 };
 
 module positioned_bin() {
