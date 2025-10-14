@@ -29,6 +29,11 @@ preferred_snap_count = 10;
 // A value between 0.66-0.75 would be a tight fit, and a value of 1.0 would be very difficult to insert and remove.
 snap_fitment = 0.5;
 
+// The standoff distance between the snap and the bin wall.
+// The default is 0.5mm, but if your bin has trouble snapping to your board,
+// (especially for lite snaps), consider adding 0.5mm-1.0mm of standoff.
+snap_standoff = 0.5;
+
 /* [Hidden] */
 
 /*///////////////////////////
@@ -523,7 +528,7 @@ module bottom_half_snapfit_cutouts() {
 };
 
 module primary_box() {
-    linear_extrude(height = full_snap_thickness)
+    linear_extrude(height = full_snap_thickness + snap_standoff)
         polygon(
             points = [
                 [0, cutout_offset],
@@ -588,11 +593,12 @@ module positioned_snaps() {
     // echo(str("Snap count is even: ", snap_count_is_even));
 
     snap_thickness = snap_type == "Lite" ? lite_snap_thickness : full_snap_thickness;
+    snap_object_overlap = 0.1; // to ensure manifold geometry during boolean operations
 
     snap_group_width = snap_count_is_even ? (cell_width * snap_count * 2) - cell_width : (cell_width * snap_count * 2);
     snap_group_offset = snap_count_is_even ? (snap_surface_width - snap_group_width) / 2 + wall_chamfer_outer : (snap_surface_width - snap_group_width) / 2 + wall_chamfer_outer + cell_width/2;
     
-    translate([snap_group_offset, full_snap_thickness - 0.1, bin_height - cell_width])
+    translate([snap_group_offset, full_snap_thickness + snap_standoff - snap_object_overlap, bin_height - cell_width])
         for (i = [0 : snap_count - 1]) {
             translate([(cell_width)*2*i + snap_margin, 0, 0])
                 rotate([90, 0 , 0])
